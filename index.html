@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>TSH Rechner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    #qa-container {
+        position: fixed;
+        top: 3cm; /* fixe Position 2cm vom unteren Rand */
+        width: 600px;
+        max-width: 90vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: none;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        z-index: 1000;
+        }
+    .question {
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+      background: none
+    }
+
+    #options-box {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    #options-box button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+
+    #history {
+        margin-top: 15rem; /* vorher 2rem */
+        margin-bottom: 6cm; /* vorher 4cm *//* damit Platz bleibt für die fixe Box */
+        background: none; 
+        width: 600px;
+        max-width: 90vw;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        
+        white-space: pre-line;
+        font-size: 0.9rem;
+        color: #333;
+        text-align: left;
+        min-height: 100px;
+        }
+
+    #output {
+      margin-top: 2rem;
+      font-weight: bold;
+      font-size: 1.3em;
+      color: darkgreen;
+      text-align: center;
+    }
+
+    
+    
+
+  </style>
+</head>
+<body>
+  <h1>TSH-Rechner</h1>
+  <div id="qa-container">
+    <div id="question-box" class="question"></div>
+    <div id="options-box"></div>
+    <div id="output"></div> <!-- neu positioniert -->
+  </div>
+  <div id="history"></div>
+  
+  
+
+  <script>
+    const frageBox = document.getElementById("question-box");
+    const optionenBox = document.getElementById("options-box");
+    const ausgabe = document.getElementById("output");
+    const historyBox = document.getElementById("history");
+    
+     // Hilfsfunktion, um Auswahl in der History anzuzeigen
+    function addToHistory(text) {
+      historyBox.innerText += text + "\n";
+      historyBox.scrollTop = historyBox.scrollHeight; // automatisch scrollen
+    }
+
+
+
+    // Array um History zu speichern
+    const history = [];
+
+    async function frage(text, optionen) {
+      return new Promise(resolve => {
+        frageBox.innerText = text;
+        optionenBox.innerHTML = "";
+
+        // Optionen nebeneinander (gleichbleibende Höhe)
+        optionen.forEach(opt => {
+          const btn = document.createElement("button");
+          btn.innerText = opt;
+          btn.onclick = () => {
+            // History speichern und anzeigen
+            addToHistory(`${text} → ${opt}`);
+            resolve(opt);
+            
+            //history.push(`${text} → ${opt}`);
+            //updateHistory();
+            //resolve(opt);
+          };
+          optionenBox.appendChild(btn);
+        });
+      });
+    }
+
+    function updateHistory() {
+      // Zeige alle bisherigen Fragen+Antworten unter den Buttons
+      historyBox.innerText = history.join("\n");
+    }
+
+    async function tshApp() {
+      
+
+      const exzellent = "Exzellentes Ansprechen der Therapie";
+      const gut = "Gutes/akzeptables Ansprechen der Therapie";
+      const biochemisch = "Biochemisch unvollständgiges Ansprechen";
+      const strukturell = "Strukturell unvollständiges Ansprechen";
+
+      const sehr_niedrig = "Sehr niedriges Risiko";
+      const niedrig = "Niedriges Risiko";
+      const intermediär = "Intermediäres Risiko";
+      const hoch = "Hohes Risiko";
+
+      let tsh_zielbereich_final = "";
+
+      const initial_eval = await frage("Hat die initiale Response-Evaluation schon stattgefunden?", ["Ja", "Nein"]);
+
+      if (initial_eval === "Nein") {
+        const typ = await frage("Follikuläres oder papilläres Schilddrüsenkarzinom?", ["Papillär", "Follikulär"]);
+
+        let risiko = "";
+
+        if (typ === "Papillär") {
+          const t = await frage("T-Status?", ["pT1a", "pT1b", "pT2", "pT3", "pT4"]);
+          let fokal = "", t_mod = t;
+          if (t === "pT1a") fokal = await frage("Fokalität?", ["Unifokal", "Multifokal"]);
+          if (t === "pT3") t_mod = await frage("Ausdehnung bei pT3?", ["pT3a1", "pT3a2", "pT3b"]);
+          const n = await frage("N-Status?", ["N0", "<= 5 Mikrometastasen", ">5 Mikrometastasen", "N1"]);
+          let n_mod = n;
+          if (n === "N1") {
+            const lk = await frage("Größte Lymphknotenmetastase?", ["0,2-3cm", ">3cm"]);
+            n_mod = (lk === ">3cm") ? "N1>3cm" : "N1 0,2cm - 3 cm";
+          }
+          const m = await frage("M-Status?", ["M0", "M1"]);
+          const r = await frage("R-Status?", ["R0", "R1 oder R2"]);
+
+          if (["pT3b", "pT4"].includes(t_mod) || n_mod === "N1>3cm" || m === "M1" || r === "R1 oder R2") {
+            risiko = hoch;
+          } else if (t === "pT1a" && ["N0", "<= 5 Mikrometastasen"].includes(n) && m === "M0" && r === "R0") {
+            const histo = await frage("Aggressive Histologie?", ["Ja", "Nein"]);
+            if (histo === "Nein") {
+              const gefaess = await frage("Gefäßinvasion?", ["Ja", "Nein"]);
+              if (gefaess === "Nein" && fokal === "Unifokal") risiko = sehr_niedrig;
+              else risiko = intermediär;
+            } else risiko = intermediär;
+          } else if (["pT1b", "pT2"].includes(t) && ["N0", "<= 5 Mikrometastasen"].includes(n) && m === "M0" && r === "R0") {
+            const histo = await frage("Aggressive Histologie?", ["Ja", "Nein"]);
+            if (histo === "Nein") {
+              const gefaess = await frage("Gefäßinvasion?", ["Ja", "Nein"]);
+              risiko = (gefaess === "Nein") ? niedrig : intermediär;
+            } else risiko = intermediär;
+          } else if (
+            (["pT3a1", "pT3a2"].includes(t_mod) && n_mod !== "N1>3cm" && m === "M0" && r === "R0") ||
+            (["pT1a", "pT1b", "pT2"].includes(t) && ["N1 0,2cm - 3 cm", ">5 Mikrometastasen"].includes(n_mod) && m === "M0" && r === "R0")
+          ) {
+            risiko = intermediär;
+          }
+
+        } else if (typ === "Follikulär") {
+          const inv = await frage("Invasivität?", ["minimalinvasiv (MIFTC)", "breit invasiv (WIFTC)"]);
+          let kapsel = "", gefaess = "", ausmass = "";
+          if (inv === "minimalinvasiv (MIFTC)") {
+            kapsel = await frage("Kapselinvasion?", ["Ja", "Nein"]);
+            gefaess = await frage("Gefäßinvasion?", ["Ja", "Nein"]);
+            if (gefaess === "Ja") ausmass = await frage("Ausmaß der Gefäßinvasion?", ["minimal (<= 2 Foci)", "ausgedehnt (>2 Foci)"]);
+          }
+          if (inv === "minimalinvasiv (MIFTC)" && kapsel === "Nein" && gefaess === "Nein") risiko = sehr_niedrig;
+          else if (ausmass !== "ausgedehnt (>2 Foci)" && (kapsel === "Ja" || ausmass === "minimal (<= 2 Foci)")) risiko = niedrig;
+          else risiko = hoch;
+        }
+
+        addToHistory(`→ Risikoklasse: ${risiko}`);
+      
+
+        const tg = (risiko === niedrig) ? await frage("Nicht-stimuliertes Tg?", ["< 0,2 ng/ml", "> 0,2 ng/ml"]) : "";
+        history.push(`→ Risikoklasse: ${risiko}`);
+        tsh_zielbereich_final = {
+          
+          [sehr_niedrig]: "0,5 - 2,0 mU/l",
+          [niedrig]: (tg === "< 0,2 ng/ml") ? "0,5 - 2,0 mU/l" : "0,1 - 0,5 mU/l",
+          [intermediär]: "0,1 - 0,5 mU/l",
+          [hoch]: "< 0,1 mU/l"
+        }[risiko];
+
+      } else {
+        const bild = await frage("Strukturelle/funktionelle Raumforderung in der Bildgebung?", ["Ja", "Nein"]);
+        let schwach = "", tg_suppr = "", tg_stim = "", tak = "";
+        if (bild === "Nein") schwach = await frage("Schwache Radioiodspeicherung im SD-Bett?", ["Ja", "Nein"]);
+        tg_suppr = await frage("Tg unter TSH-Unterdrückung?", ["< 0.2 ng/ml", "0.2 - 1 ng/ml", ">= 1 ng/ml", "Unbekannt"]);
+        tg_stim = await frage("Tg unter TSH-Stimulation?", ["< 1 ng/ml", "1 - 10 ng/ml", ">= 10 ng/ml", "Unbekannt"]);
+        tak = await frage("TAK-Werte?", ["negativ", "stabil oder fallend", "steigend"]);
+
+        let response = "";
+        if (tg_suppr === "Unbekannt" && tg_stim === "Unbekannt") {
+          await frage("Es muss mindestens ein TSH Wert vorliegen", ["Okay"]);
+          response = "";
+        } else if (bild === "Ja") response = strukturell;
+        else if (tak === "steigend" || tg_stim === ">= 10 ng/ml" || tg_suppr === ">= 1 ng/ml") response = biochemisch;
+        else if (schwach === "Nein" && (tg_stim === "< 1 ng/ml" || tg_suppr === "< 0.2 ng/ml") && tak === "negativ") response = exzellent;
+        else response = gut;
+
+         addToHistory(`→ Response-Kategorie: ${response}`);
+        
+
+        if (response === exzellent) tsh_zielbereich_final = "0,5 - 2,0 mU/l";
+        else if (response === gut) {
+          const risiko = await frage("Alter > 60, Osteoporose oder Vorhofflimmern?", ["Ja", "Nein"]);
+          tsh_zielbereich_final = (risiko === "Ja") ? "0,5 - 2,0 mU/l" : "0,1 - 0,5 mU/l";
+        } else if (response === biochemisch) {
+          const risiko = await frage("Postmenopause, Tachykardie, Osteopenie/Osteoporose oder Alter > 60?", ["Ja", "Nein"]);
+          tsh_zielbereich_final = (risiko === "Ja") ? "0,1 - 0,5 mU/l" : "< 0,1 mU/l";
+        } else if (response === strukturell) {
+          const risiko = await frage("Vorhofflimmern?", ["Ja", "Nein"]);
+          tsh_zielbereich_final = (risiko === "Ja") ? "0,1 - 0,5 mU/l" : "< 0,1 mU/l";
+        }
+      }
+
+      // Frage, Antworten und History ausblenden, nur Ergebnis anzeigen
+      frageBox.style.display = "none";
+      optionenBox.style.display = "none";
+      // historyBox.style.display = "none";
+
+      ausgabe.innerText = `→ TSH Zielbereich: ${tsh_zielbereich_final || "Nicht bestimmt"}`;
+
+      
+      
+    }
+   
+    tshApp();
+  </script>
+</body>
+</html>
