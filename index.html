@@ -26,7 +26,7 @@
 
     #qa-container {
         position: fixed;
-        top: 3cm; /* fixe Position 2cm vom unteren Rand */
+        top: 3cm; 
         width: 600px;
         max-width: 90vw;
         display: flex;
@@ -59,8 +59,8 @@
     }
 
     #history {
-        margin-top: 15rem; /* vorher 2rem */
-        margin-bottom: 6cm; /* vorher 4cm *//* damit Platz bleibt für die fixe Box */
+        margin-top: 15rem; 
+        margin-bottom: 6cm; 
         background: none; 
         width: 600px;
         max-width: 90vw;
@@ -93,7 +93,7 @@
   <div id="qa-container">
     <div id="question-box" class="question"></div>
     <div id="options-box"></div>
-    <div id="output"></div> <!-- neu positioniert -->
+    <div id="output"></div> 
   </div>
   <div id="history"></div>
   
@@ -108,7 +108,7 @@
      // Hilfsfunktion, um Auswahl in der History anzuzeigen
     function addToHistory(text) {
       historyBox.innerText += text + "\n";
-      historyBox.scrollTop = historyBox.scrollHeight; // automatisch scrollen
+      historyBox.scrollTop = historyBox.scrollHeight;
     }
 
 
@@ -121,18 +121,14 @@
         frageBox.innerText = text;
         optionenBox.innerHTML = "";
 
-        // Optionen nebeneinander (gleichbleibende Höhe)
+        
         optionen.forEach(opt => {
           const btn = document.createElement("button");
           btn.innerText = opt;
           btn.onclick = () => {
-            // History speichern und anzeigen
             addToHistory(`${text} → ${opt}`);
             resolve(opt);
-            
-            //history.push(`${text} → ${opt}`);
-            //updateHistory();
-            //resolve(opt);
+                        
           };
           optionenBox.appendChild(btn);
         });
@@ -140,7 +136,6 @@
     }
 
     function updateHistory() {
-      // Zeige alle bisherigen Fragen+Antworten unter den Buttons
       historyBox.innerText = history.join("\n");
     }
 
@@ -162,46 +157,53 @@
       const initial_eval = await frage("Hat die initiale Response-Evaluation schon stattgefunden?", ["Ja", "Nein"]);
 
       if (initial_eval === "Nein") {
-        const typ = await frage("Test: Follikuläres oder papilläres Schilddrüsenkarzinom?", ["Papillär", "Follikulär"]);
+        const typ = await frage("Follikuläres oder papilläres Schilddrüsenkarzinom?", ["Papillär", "Follikulär"]);
 
         let risiko = "";
 
+
+        // Papilläres Schilddrüsenkarzinom, Bestimmung der Risikoklasse
         if (typ === "Papillär") {
           const t = await frage("T-Status?", ["pT1a", "pT1b", "pT2", "pT3", "pT4"]);
-          let fokal = "", t_mod = t;
+          let fokal = "" 
           if (t === "pT1a") fokal = await frage("Fokalität?", ["Unifokal", "Multifokal"]);
-          if (t === "pT3") t_mod = await frage("Ausdehnung bei pT3?", ["pT3a1", "pT3a2", "pT3b"]);
-          const n = await frage("N-Status?", ["N0", "<= 5 Mikrometastasen", ">5 Mikrometastasen", "N1"]);
-          let n_mod = n;
+          if (t === "pT3") t = await frage("Ausdehnung bei pT3?", ["pT3a1", "pT3a2", "pT3b"]);
+          const n = await frage("N-Status?", ["N0", "<= 5 Mikrometastasen", ">5 Mikrometastasen", "N1"]);         
           if (n === "N1") {
             const lk = await frage("Größte Lymphknotenmetastase?", ["0,2-3cm", ">3cm"]);
-            n_mod = (lk === ">3cm") ? "N1>3cm" : "N1 0,2cm - 3 cm";
+            n = (lk === ">3cm") ? "N1>3cm" : "N1 0,2cm - 3 cm";
           }
           const m = await frage("M-Status?", ["M0", "M1"]);
           const r = await frage("R-Status?", ["R0", "R1 oder R2"]);
 
-          if (["pT3b", "pT4"].includes(t_mod) || n_mod === "N1>3cm" || m === "M1" || r === "R1 oder R2") {
+          if (["pT3b", "pT4"].includes(t) || n === "N1>3cm" || m === "M1" || r === "R1 oder R2") {
             risiko = hoch;
           } else if (t === "pT1a" && ["N0", "<= 5 Mikrometastasen"].includes(n) && m === "M0" && r === "R0") {
             const histo = await frage("Aggressive Histologie?", ["Ja", "Nein"]);
             if (histo === "Nein") {
               const gefaess = await frage("Gefäßinvasion?", ["Ja", "Nein"]);
-              if (gefaess === "Nein" && fokal === "Unifokal") risiko = sehr_niedrig;
-              else risiko = intermediär;
+              if (gefaess === "Nein") {
+                if (fokal === "Unifokal") risiko = sehr_niedrig;
+                else risiko = niedrig;
+              } else risiko = intermediär;
             } else risiko = intermediär;
+
           } else if (["pT1b", "pT2"].includes(t) && ["N0", "<= 5 Mikrometastasen"].includes(n) && m === "M0" && r === "R0") {
             const histo = await frage("Aggressive Histologie?", ["Ja", "Nein"]);
             if (histo === "Nein") {
               const gefaess = await frage("Gefäßinvasion?", ["Ja", "Nein"]);
-              risiko = (gefaess === "Nein") ? niedrig : intermediär;
+              if (gefaess === "Nein") {
+                risiko = niedrig
+               } else risiko = intermediär;
             } else risiko = intermediär;
           } else if (
-            (["pT3a1", "pT3a2"].includes(t_mod) && n_mod !== "N1>3cm" && m === "M0" && r === "R0") ||
-            (["pT1a", "pT1b", "pT2"].includes(t) && ["N1 0,2cm - 3 cm", ">5 Mikrometastasen"].includes(n_mod) && m === "M0" && r === "R0")
+            (["pT3a1", "pT3a2"].includes(t) && n !== "N1>3cm" && m === "M0" && r === "R0") ||
+            (["pT1a", "pT1b", "pT2"].includes(t) && ["N1 0,2cm - 3 cm", ">5 Mikrometastasen"].includes(n) && m === "M0" && r === "R0")
           ) {
             risiko = intermediär;
           }
 
+          // Follikuläres Schilddrüsenkarzinom, Bestimmung der Risikoklasse
         } else if (typ === "Follikulär") {
           const inv = await frage("Invasivität?", ["minimalinvasiv (MIFTC)", "breit invasiv (WIFTC)"]);
           let kapsel = "", gefaess = "", ausmass = "";
@@ -211,13 +213,13 @@
             if (gefaess === "Ja") ausmass = await frage("Ausmaß der Gefäßinvasion?", ["minimal (<= 2 Foci)", "ausgedehnt (>2 Foci)"]);
           }
           if (inv === "minimalinvasiv (MIFTC)" && kapsel === "Nein" && gefaess === "Nein") risiko = sehr_niedrig;
-          else if (ausmass !== "ausgedehnt (>2 Foci)" && (kapsel === "Ja" || ausmass === "minimal (<= 2 Foci)")) risiko = niedrig;
-          else risiko = hoch;
+          else if (ausmass == "ausgedehnt (>2 Foci)" || inv == "breit invasiv (WIFTC)") risiko = hoch;
+          else risiko = niedrig;
         }
-
+    
         addToHistory(`→ Risikoklasse: ${risiko}`);
       
-
+        // Bestimmung des TSH-Zielbereich, abhängig von Risikoklasse und Tg (Initiale Response-Evaluation ist noch nicht erfolgt)
         const tg = (risiko === niedrig) ? await frage("Nicht-stimuliertes Tg?", ["< 0,2 ng/ml", "> 0,2 ng/ml"]) : "";
         history.push(`→ Risikoklasse: ${risiko}`);
         tsh_zielbereich_final = {
@@ -228,6 +230,8 @@
           [hoch]: "< 0,1 mU/l"
         }[risiko];
 
+
+        // Bestimmung der Response-Kategorie
       } else {
         const bild = await frage("Strukturelle/funktionelle Raumforderung in der Bildgebung?", ["Ja", "Nein"]);
         let schwach = "", tg_suppr = "", tg_stim = "", tak = "";
@@ -247,7 +251,7 @@
 
          addToHistory(`→ Response-Kategorie: ${response}`);
         
-
+        // Bestimmung des TSH-Zielbereichs in Abhängigkeit von der Response-Kategorie
         if (response === exzellent) tsh_zielbereich_final = "0,5 - 2,0 mU/l";
         else if (response === gut) {
           const risiko = await frage("Alter > 60, Osteoporose oder Vorhofflimmern?", ["Ja", "Nein"]);
@@ -261,13 +265,12 @@
         }
       }
 
-      // Frage, Antworten und History ausblenden, nur Ergebnis anzeigen
+      
       frageBox.style.display = "none";
       optionenBox.style.display = "none";
-      // historyBox.style.display = "none";
+      
 
       ausgabe.innerText = `→ TSH Zielbereich: ${tsh_zielbereich_final || "Nicht bestimmt"}`;
-
       
       
     }
@@ -276,4 +279,3 @@
   </script>
 </body>
 </html>
-
