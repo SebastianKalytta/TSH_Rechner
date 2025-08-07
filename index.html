@@ -164,14 +164,13 @@
 
         // Papilläres Schilddrüsenkarzinom, Bestimmung der Risikoklasse
         if (typ === "Papillär") {
-          const t = await frage("T-Status?", ["pT1a", "pT1b", "pT2", "pT3", "pT4"]);
+          let t = await frage("T-Status?", ["pT1a", "pT1b", "pT2", "pT3", "pT4"]);
           let fokal = "" 
           if (t === "pT1a") fokal = await frage("Fokalität?", ["Unifokal", "Multifokal"]);
           if (t === "pT3") {
-            t_mod = await frage("Test: Ausdehnung bei pT3?", ["pT3a1", "pT3a2", "pT3b"]);
-            t=t_mod;
+            t = await frage("Ausdehnung bei pT3?", ["pT3a1", "pT3a2", "pT3b"]);
           }
-          const n = await frage("N-Status?", ["N0", "<= 5 Mikrometastasen", ">5 Mikrometastasen", "N1"]);         
+          let n = await frage("N-Status?", ["N0", "<= 5 Mikrometastasen", ">5 Mikrometastasen", "N1"]);         
           if (n === "N1") {
             const lk = await frage("Größte Lymphknotenmetastase?", ["0,2-3cm", ">3cm"]);
             n = (lk === ">3cm") ? "N1>3cm" : "N1 0,2cm - 3 cm";
