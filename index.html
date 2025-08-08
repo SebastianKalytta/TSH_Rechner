@@ -220,9 +220,8 @@
       
         // Bestimmung des TSH-Zielbereich, abhängig von Risikoklasse und Tg (Initiale Response-Evaluation ist noch nicht erfolgt)
         const tg = (risiko === niedrig) ? await frage("Nicht-stimuliertes Tg?", ["< 0,2 ng/ml", "> 0,2 ng/ml"]) : "";
-        history.push(`→ Risikoklasse: ${risiko}`);
+        
         tsh_zielbereich_final = {
-          
           [sehr_niedrig]: "0,5 - 2,0 mU/l",
           [niedrig]: (tg === "< 0,2 ng/ml") ? "0,5 - 2,0 mU/l" : "0,1 - 0,5 mU/l",
           [intermediär]: "0,1 - 0,5 mU/l",
@@ -278,4 +277,5 @@
   </script>
 </body>
 </html>
+
 
